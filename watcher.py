@@ -22,11 +22,11 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 APP_NAME = "acturnips-watcher"
-APP_VERSION = "0.3.0"
+APP_VERSION = "0.3.1"
 APP_AUTHOR = "Thomas Bell"
 
 SUBREDDIT = "acturnips"
-URL_REGEX = re.compile(r'((https?://)?[a-z][a-z0-9]+\.[a-z][a-z0-9]+/[^ ]+)')
+URL_REGEX = re.compile(r'\[?((https?://)?[a-z][a-z0-9]+\.[a-z][a-z0-9]+/[^ \]]+)\]?')
 
 LOADING_PARTS = [
     'Now loading' + 
@@ -52,6 +52,7 @@ def find_integer(title: str) -> Optional[int]:
         "and": "",
         "-": " ",
         ",": "",
+        ".": "",
         "oh": 0,
         "tee": 0,
         "one hundred": 100,
@@ -105,7 +106,7 @@ def find_links(text: str) -> List[str]:
         if 'http' not in url:
             url = f'http://{url}'
         links.append(url)
-        match = URL_REGEX.search(text.lower(), match.end)
+        match = URL_REGEX.search(text.lower(), match.end())
     
     return links
 
@@ -177,7 +178,11 @@ def main():
 
     subreddit = reddit.subreddit(SUBREDDIT)
     while True:
-        post = watch_new(subreddit, args.price, args.delay)
+        try:
+            post = watch_new(subreddit, args.price, args.delay)
+        except KeyboardInterrupt:
+            break
+
         links = find_links(post.selftext)
 
         if winsound:
